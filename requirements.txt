@@ -5,6 +5,6 @@ numpy
 jupyter
 notebook
 tqdm
-opencv-contrib-python
+# opencv-contrib-python
 kagglehub
 opencv-python

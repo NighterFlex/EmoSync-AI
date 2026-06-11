@@ -6,6 +6,8 @@ import time
 from datetime import datetime
 import math
 
+from emotion_detector import EmotionDetector 
+
 # ─── Theme ────
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -176,6 +178,8 @@ class DetectorPage(ctk.CTkFrame):
         self.cap             = None
         self.camera_thread   = None
         self.emotion_history = []
+
+        self.detector = EmotionDetector()   #imama added this
 
         self._pending_emotion    = None
         self._pending_confidence = None
@@ -392,36 +396,62 @@ class DetectorPage(ctk.CTkFrame):
         )
         self.stop_btn.grid(row=0, column=2, pady=13, padx=(0, 24), sticky="e")
 
-    # ── Camera loop ──
     def _camera_loop(self):
+
         self.cap = cv2.VideoCapture(0)
+
         if not self.cap.isOpened():
             self.after(0, self._show_cam_error)
             return
+
         while self.is_running:
+
             ret, frame = self.cap.read()
+
             if not ret:
-                break
-            frame     = cv2.flip(frame, 1)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img       = Image.fromarray(frame_rgb)
-            lw = self.cam_label.winfo_width()  or 580
+                continue
+
+            frame = cv2.flip(frame, 1)
+
+            frame, emotion, confidence = self.detector.detect(frame)
+
+            self.update_emotion(
+                emotion,
+                confidence
+            )
+
+            frame_rgb = cv2.cvtColor(
+                frame,
+                cv2.COLOR_BGR2RGB
+            )
+
+            img = Image.fromarray(frame_rgb)
+
+            lw = self.cam_label.winfo_width() or 580
             lh = self.cam_label.winfo_height() or 400
-            img.thumbnail((lw - 8, lh - 8), Image.LANCZOS)
+
+            img.thumbnail(
+                (lw - 8, lh - 8),
+                Image.LANCZOS
+            )
+
             ctk_img = ImageTk.PhotoImage(img)
-            self.cam_label.configure(image=ctk_img, text="")
+
+            self.cam_label.configure(
+                image=ctk_img,
+                text=""
+            )
+
             self.cam_label.image = ctk_img
-            time.sleep(0.03)
+
+            print(
+                f"Emotion: {emotion} | Confidence: {confidence*100:.2f}%"
+            )
+
         if self.cap:
             self.cap.release()
-        self.cap = None
 
-    def _show_cam_error(self):
-        self.cam_label.configure(
-            image="", text="⚠️  Camera not found.\nCheck your webcam connection.",
-            text_color="#FF6B6B",
-        )
-        self._set_idle_state()
+        self.cap = None
 
     # ── Emotion API ──
     def update_emotion(self, emotion: str, confidence: float):

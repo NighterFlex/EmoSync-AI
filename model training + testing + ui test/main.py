@@ -105,3 +105,8 @@ history = model.fit(
 )
 
 model.save("emotion_recognition_model.h5") #saving the trained model 
+
+test_loss, test_accuracy = model.evaluate(validation_generator)
+
+print(f"Test Loss: {test_loss}")
+print(f"Test Accuracy: {test_accuracy * 100:.2f}%")

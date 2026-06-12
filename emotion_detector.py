@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 # from keras.models import load_model
-from keras.models import load_model, Model
+from keras.models import load_model
 
 class EmotionDetector:
     def __init__(self):
